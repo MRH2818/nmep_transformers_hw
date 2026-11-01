@@ -29,11 +29,15 @@ class CharacterTokenizer(Tokenizer):
         raise NotImplementedError("Need to implement vocab initialization")
 
     def encode(self, text: str) -> torch.Tensor:
-        raise NotImplementedError(
-            "Need to implement encoder that converts text to tensor of tokens."
-        )
+        return torch.tensor([ self.characters.find(c) for c in text ])
+        
+        # raise NotImplementedError(
+        #     "Need to implement encoder that converts text to tensor of tokens."
+        # )
 
     def decode(self, tokens: torch.Tensor) -> str:
-        raise NotImplementedError(
-            "Need to implement decoder that converts tensor of tokens to text."
-        )
+        return "".join([self.characters[i] for i in tokens])
+        
+        # raise NotImplementedError(
+        #     "Need to implement decoder that converts tensor of tokens to text."
+        # )
