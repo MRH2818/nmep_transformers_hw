@@ -26,10 +26,13 @@ class CharacterTokenizer(Tokenizer):
         if verbose:
             print("Vocabulary:", self.vocab)
 
-        raise NotImplementedError("Need to implement vocab initialization")
+        for i, char in enumerate(self.characters):
+            self.vocab[char] = i
+        
+        # raise NotImplementedError("Need to implement vocab initialization")
 
     def encode(self, text: str) -> torch.Tensor:
-        return torch.tensor([ self.characters.find(c) for c in text ])
+        return torch.tensor([ self.vocab.get(c, 0) for c in text ])
         
         # raise NotImplementedError(
         #     "Need to implement encoder that converts text to tensor of tokens."
