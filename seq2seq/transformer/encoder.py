@@ -79,6 +79,8 @@ class EncoderLayer(nn.Module):
         self.value_length = value_length
 
         # Define any layers you'll need in the forward pass
+        
+        
         raise NotImplementedError("Need to implement vocab initialization.")
 
     def forward(
