@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 
 from .attention import MultiHeadAttention, FeedForwardNN
-from seq2seq.data.fr_en import tokenizer
 
 
 class PositionalEncoding(nn.Module):
@@ -78,10 +77,13 @@ class EncoderLayer(nn.Module):
         self.qk_length = qk_length
         self.value_length = value_length
 
-        # Define any layers you'll need in the forward pass
-        
-        
-        raise NotImplementedError("Need to implement vocab initialization.")
+        self.self_attention = MultiHeadAttention(
+            num_heads, embedding_dim, qk_length, value_length
+        )
+        self.feed_forward = FeedForwardNN(embedding_dim, ffn_hidden_dim)
+        self.dropout = nn.Dropout(dropout)
+        self.attention_norm = nn.LayerNorm(embedding_dim)
+        self.feed_forward_norm = nn.LayerNorm(embedding_dim)
 
     def forward(
         self, x: torch.Tensor, mask: Optional[torch.Tensor] = None
@@ -89,7 +91,11 @@ class EncoderLayer(nn.Module):
         """
         The forward pass of the EncoderLayer.
         """
-        raise NotImplementedError("Need to implement forward pass of EncoderLayer.")
+        attention_output = self.self_attention(x, x, x, mask)
+        x = self.attention_norm(x + self.dropout(attention_output))
+
+        feed_forward_output = self.feed_forward(x)
+        return self.feed_forward_norm(x + self.dropout(feed_forward_output))
 
 
 class Encoder(nn.Module):
@@ -134,20 +140,32 @@ class Encoder(nn.Module):
         self.qk_length = qk_length
         self.value_length = value_length
 
-        # Define any layers you'll need in the forward pass
-        # Hint: You may find `ModuleList`s useful for creating
-        # multiple layers from some kind of list comprehension.
-        #
-        # Recall that the input is just a sequence of tokens,
-        # so we'll have to first create some kind of embedding
-        # and then use the other layers we've implemented to
-        # build out the Transformer encoder.
-        raise NotImplementedError("Need to implement Encoder layers")
+        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.positional_encoding = PositionalEncoding(
+            embedding_dim, dropout, max_length
+        )
+        self.layers = nn.ModuleList(
+            [
+                EncoderLayer(
+                    num_heads,
+                    embedding_dim,
+                    ffn_hidden_dim,
+                    qk_length,
+                    value_length,
+                    dropout,
+                )
+                for _ in range(num_layers)
+            ]
+        )
 
-
-    def forward(self, x: torch.Tensor, src_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, src_mask: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         """
         The forward pass of the Encoder.
         """
-        raise NotImplementedError("Need to implement forward pass of Encoder")
-
+        x = self.embedding(x)
+        x = self.positional_encoding(x)
+        for layer in self.layers:
+            x = layer(x, src_mask)
+        return x
