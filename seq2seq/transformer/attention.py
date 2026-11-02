@@ -40,7 +40,7 @@ class MultiHeadAttention(nn.Module):
         self.w_v = nn.Linear(embedding_dim, num_heads * value_length)
         self.w_o = nn.Linear(num_heads * value_length, embedding_dim)
 
-        raise NotImplementedError("Need to implement MHA layers")
+        #raise NotImplementedError("Need to implement MHA layers")
 
     def split_heads(self, x: torch.Tensor, vec_length: int) -> torch.Tensor:
         """
