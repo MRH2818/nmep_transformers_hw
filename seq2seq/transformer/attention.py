@@ -112,9 +112,9 @@ class MultiHeadAttention(nn.Module):
             mask: Optional boolean torch.Tensor, broadcastable to (B, num_heads, T, T).
         """
         if mask is not None:
-            # Apply the mask to the attention scores
+            # Boolean masks mark positions to block, matching the causal/pad masks.
             attention_scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.qk_length ** 0.5)
-            attention_scores = attention_scores.masked_fill(mask == 0, float('-inf'))
+            attention_scores = attention_scores.masked_fill(mask, float('-inf'))
             attention_weights = torch.softmax(attention_scores, dim=-1)
             return torch.matmul(attention_weights, V)
         
@@ -149,8 +149,9 @@ class MultiHeadAttention(nn.Module):
         K = self.split_heads(k, self.qk_length)
         V = self.split_heads(v, self.value_length)
 
-        if mask is not None:
-            mask = mask.unsqueeze(1)  # Expand to (B, 1, T, T)
+        if mask is not None and mask.dim() == 3:
+            # Add the head-broadcast dimension for a (B, T, S) mask.
+            mask = mask.unsqueeze(1)
 
         attention_output = self.scaled_dot_product_attention(Q, K, V, mask)
         output = self.combine_heads(attention_output)
